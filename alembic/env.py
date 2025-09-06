@@ -8,6 +8,8 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from app.models.base import Base  # noqa: E402
+# Import all models to ensure they're registered with SQLAlchemy metadata
+from app.models import *  # noqa: E402, F403
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

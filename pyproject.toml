@@ -1,0 +1,96 @@
+[tool.poetry]
+name = "telegram-ticket-bot"
+version = "0.1.0"
+description = "Professional Telegram Ticket Support System with Mini App interface"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.104.1"
+uvicorn = {extras = ["standard"], version = "^0.24.0"}
+sqlalchemy = "^2.0.23"
+alembic = "^1.12.1"
+asyncpg = "^0.29.0"
+redis = "^5.0.1"
+aiogram = "^3.1.1"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+python-multipart = "^0.0.6"
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+aiofiles = "^23.2.1"
+pillow = "^10.1.0"
+celery = "^5.3.4"
+pandas = "^2.1.3"
+python-dateutil = "^2.8.2"
+httpx = "^0.25.2"
+aiohttp = "^3.9.1"
+pydantic = "^2.5.0"
+email-validator = "^2.1.0"
+python-dotenv = "^1.0.0"
+structlog = "^23.2.0"
+sentry-sdk = {extras = ["fastapi"], version = "^1.38.0"}
+websockets = "^12.0"
+pytz = "^2023.3"
+arrow = "^1.3.0"
+humanize = "^4.8.0"
+gunicorn = "^21.2.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.3"
+pytest-asyncio = "^0.21.1"
+faker = "^20.1.0"
+black = "^23.11.0"
+isort = "^5.12.0"
+flake8 = "^6.1.0"
+mypy = "^1.7.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.pytest_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["app"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]

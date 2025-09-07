@@ -21,7 +21,7 @@ def update_env_file(new_url: str) -> bool:
     Returns:
         bool: True если обновление успешно
     """
-    env_path = Path('.env')
+    env_path = Path('deployment/config/.env')
     
     if not env_path.exists():
         print("❌ Файл .env не найден!")
@@ -140,8 +140,8 @@ def main():
         sys.exit(1)
     
     # Проверяем рабочую директорию
-    if not Path('.env').exists():
-        print("❌ Запустите скрипт из корневой папки проекта (где находится .env)")
+    if not Path('deployment/config/.env').exists():
+        print("❌ Запустите скрипт из корневой папки проекта (где находится deployment/config/.env)")
         sys.exit(1)
     
     success = True
@@ -160,10 +160,10 @@ def main():
         print("")
         print("🔄 Следующие шаги:")
         print("1. Перезапустите WebSocket сервер:")
-        print("   python websocket_server.py")
+        print("   python src/servers/websocket_server.py")
         print("")
         print("2. В новом терминале перезапустите бота:")
-        print("   python -m app.telegram.bot") 
+        print("   python -m src.tikethet.telegram.bot") 
         print("")
         print("3. Проверьте работу Mini App в Telegram")
         print("   /tickets -> кнопка 'Открыть тикеты'")

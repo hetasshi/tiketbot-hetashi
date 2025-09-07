@@ -58,10 +58,10 @@ python scripts/update_ngrok_url.py https://abc123.ngrok.io
 ### 5. Перезапустить серверы
 ```bash
 # Терминал 1: WebSocket сервер
-python websocket_server.py
+python src/servers/websocket_server.py
 
 # Терминал 2: Telegram бот  
-python -m app.telegram.bot
+python -m src.tikethet.telegram.bot
 ```
 
 ---
@@ -127,14 +127,14 @@ design/
 # 1. Запуск ngrok (отдельный терминал)
 ngrok http 8000
 
-# 2. Обновление URL (замените на ваш ngrok URL)
+# 2. Обновление URL (замените на ваш ngrok URL)  
 python scripts/update_ngrok_url.py https://ВАШ_NGROK_URL.ngrok.io
 
 # 3. Запуск WebSocket сервера (терминал 1)
-python websocket_server.py
+python src/servers/websocket_server.py
 
-# 4. Запуск бота (терминал 2) 
-python -m app.telegram.bot
+# 4. Запуск бота (терминал 2)
+python -m src.tikethet.telegram.bot
 ```
 
 ---

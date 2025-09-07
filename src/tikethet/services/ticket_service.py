@@ -10,12 +10,12 @@ from sqlalchemy import select, func, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.ticket import Ticket, TicketStatus, TicketPriority
-from app.models.user import User, UserRole
-from app.models.category import Category
-from app.models.message import Message
-from app.schemas.ticket import TicketCreate, TicketUpdate, TicketFilter
-from app.schemas.common import PaginationParams
+from tikethet.models.ticket import Ticket, TicketStatus, TicketPriority
+from tikethet.models.user import User, UserRole
+from tikethet.models.category import Category
+from tikethet.models.message import Message
+from tikethet.schemas.ticket import TicketCreate, TicketUpdate, TicketFilter
+from tikethet.schemas.common import PaginationParams
 
 
 class TicketService:

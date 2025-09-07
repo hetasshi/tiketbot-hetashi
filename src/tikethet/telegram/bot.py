@@ -17,8 +17,8 @@ from aiogram.types import BotCommand
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 
-from app.config import get_settings
-from app.telegram.handlers import commands, webapp, admin
+from tikethet.config import get_settings
+from tikethet.telegram.handlers import commands, webapp, admin
 
 logger = logging.getLogger(__name__)
 

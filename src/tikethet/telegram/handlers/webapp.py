@@ -11,7 +11,7 @@ from aiogram.types import Message, CallbackQuery, WebAppData, WebAppInfo
 from aiogram.filters import Filter
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from app.config import get_settings
+from tikethet.config import get_settings
 
 logger = logging.getLogger(__name__)
 router = Router()

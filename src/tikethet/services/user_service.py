@@ -8,8 +8,8 @@ from typing import Optional, List
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import User, UserRole
-from app.schemas.user import UserCreate, UserUpdate
+from tikethet.models.user import User, UserRole
+from tikethet.schemas.user import UserCreate, UserUpdate
 
 
 class UserService:

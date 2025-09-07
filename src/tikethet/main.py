@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
-from app.config import get_settings
+from tikethet.config import get_settings
 
 
 # Инициализация настроек
@@ -145,7 +145,7 @@ async def internal_server_error(request: Request, exc: Exception):
 
 
 # API роуты
-from app.api.v1 import auth, tickets, categories, messages
+from tikethet.api.v1 import auth, tickets, categories, messages
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(tickets.router, prefix="/api/v1/tickets", tags=["tickets"])
 app.include_router(categories.router, prefix="/api/v1/categories", tags=["categories"])

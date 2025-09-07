@@ -8,8 +8,8 @@ import logging
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import NullPool
 
-from app.config import get_settings
-from app.models.base import Base
+from tikethet.config import get_settings
+from tikethet.models.base import Base
 
 # Получение настроек
 settings = get_settings()

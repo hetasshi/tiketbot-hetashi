@@ -8,7 +8,7 @@ import uuid
 
 from pydantic import BaseModel, Field
 
-from app.models.user import UserRole
+from tikethet.models.user import UserRole
 
 
 class UserBase(BaseModel):

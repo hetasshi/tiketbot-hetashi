@@ -12,11 +12,11 @@ from urllib.parse import parse_qsl
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import get_settings
-from app.models.user import User
-from app.schemas.auth import LoginRequest
-from app.schemas.user import UserCreate
-from app.services.user_service import UserService
+from tikethet.config import get_settings
+from tikethet.models.user import User
+from tikethet.schemas.auth import LoginRequest
+from tikethet.schemas.user import UserCreate
+from tikethet.services.user_service import UserService
 
 settings = get_settings()
 

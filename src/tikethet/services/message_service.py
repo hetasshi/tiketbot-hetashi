@@ -9,10 +9,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.message import Message
-from app.models.ticket import Ticket
-from app.models.user import User, UserRole
-from app.schemas.message import MessageCreate, MessageUpdate
+from tikethet.models.message import Message
+from tikethet.models.ticket import Ticket
+from tikethet.models.user import User, UserRole
+from tikethet.schemas.message import MessageCreate, MessageUpdate
 
 
 class MessageService:
@@ -172,7 +172,7 @@ class MessageService:
             ticket: Тикет
             user: Автор сообщения
         """
-        from app.models.ticket import TicketStatus
+        from tikethet.models.ticket import TicketStatus
         
         # Если тикет закрыт, не меняем статус
         if ticket.status == TicketStatus.CLOSED:

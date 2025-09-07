@@ -8,13 +8,13 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db_session
-from app.models.user import User
-from app.schemas.message import MessageCreate, MessageUpdate, MessageResponse
-from app.schemas.common import SuccessResponse
-from app.services.ticket_service import TicketService
-from app.services.message_service import MessageService
-from app.api.dependencies import require_user
+from tikethet.database import get_db_session
+from tikethet.models.user import User
+from tikethet.schemas.message import MessageCreate, MessageUpdate, MessageResponse
+from tikethet.schemas.common import SuccessResponse
+from tikethet.services.ticket_service import TicketService
+from tikethet.services.message_service import MessageService
+from tikethet.api.dependencies import require_user
 
 router = APIRouter()
 

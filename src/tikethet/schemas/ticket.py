@@ -8,7 +8,7 @@ import uuid
 
 from pydantic import BaseModel, Field
 
-from app.models.ticket import TicketStatus, TicketPriority
+from tikethet.models.ticket import TicketStatus, TicketPriority
 from .user import UserResponse
 from .category import CategoryResponse
 from .common import PaginatedResponse

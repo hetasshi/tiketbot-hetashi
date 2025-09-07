@@ -7,11 +7,11 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db_session
-from app.models.user import User
-from app.schemas.category import CategoryResponse
-from app.services.category_service import CategoryService
-from app.api.dependencies import require_user, require_admin
+from tikethet.database import get_db_session
+from tikethet.models.user import User
+from tikethet.schemas.category import CategoryResponse
+from tikethet.services.category_service import CategoryService
+from tikethet.api.dependencies import require_user, require_admin
 
 router = APIRouter()
 

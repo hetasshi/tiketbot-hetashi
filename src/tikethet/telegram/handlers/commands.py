@@ -10,7 +10,7 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types import WebAppInfo
 
-from app.config import get_settings
+from tikethet.config import get_settings
 
 logger = logging.getLogger(__name__)
 router = Router()

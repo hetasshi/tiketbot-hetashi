@@ -5,11 +5,11 @@ API endpoints для аутентификации.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db_session
-from app.schemas.auth import TelegramAuth, TokenResponse, LoginRequest
-from app.schemas.user import UserResponse
-from app.services.auth_service import AuthService
-from app.api.dependencies import AuthDependencies
+from tikethet.database import get_db_session
+from tikethet.schemas.auth import TelegramAuth, TokenResponse, LoginRequest
+from tikethet.schemas.user import UserResponse
+from tikethet.services.auth_service import AuthService
+from tikethet.api.dependencies import AuthDependencies
 
 router = APIRouter()
 

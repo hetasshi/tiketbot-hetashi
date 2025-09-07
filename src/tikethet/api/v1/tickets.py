@@ -8,17 +8,17 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db_session
-from app.models.user import User, UserRole
-from app.models.ticket import TicketStatus, TicketPriority
-from app.schemas.ticket import (
+from tikethet.database import get_db_session
+from tikethet.models.user import User, UserRole
+from tikethet.models.ticket import TicketStatus, TicketPriority
+from tikethet.schemas.ticket import (
     TicketCreate, TicketUpdate, TicketResponse, TicketListResponse,
     TicketFilter, TicketAssign, TicketStatusUpdate
 )
-from app.schemas.common import PaginationParams, SuccessResponse
-from app.services.ticket_service import TicketService
-from app.services.category_service import CategoryService
-from app.api.dependencies import AuthDependencies, require_user, require_helper
+from tikethet.schemas.common import PaginationParams, SuccessResponse
+from tikethet.services.ticket_service import TicketService
+from tikethet.services.category_service import CategoryService
+from tikethet.api.dependencies import AuthDependencies, require_user, require_helper
 
 router = APIRouter()
 
@@ -362,7 +362,7 @@ async def assign_ticket(
     
     assigned_user = None
     if assign_data.assigned_to:
-        from app.services.user_service import UserService
+        from tikethet.services.user_service import UserService
         user_service = UserService(db)
         assigned_user = await user_service.get_user_by_id(assign_data.assigned_to)
         

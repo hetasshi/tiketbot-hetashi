@@ -8,7 +8,7 @@ from typing import Optional, List
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.category import Category
+from tikethet.models.category import Category
 
 
 class CategoryService:

@@ -10,10 +10,10 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import get_settings
-from app.database import get_db_session
-from app.models.user import User, UserRole
-from app.services.user_service import UserService
+from tikethet.config import get_settings
+from tikethet.database import get_db_session
+from tikethet.models.user import User, UserRole
+from tikethet.services.user_service import UserService
 
 settings = get_settings()
 security = HTTPBearer()

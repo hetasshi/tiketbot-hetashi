@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
 
 # Создание FastAPI приложения
 app = FastAPI(
-    title="Telegram Ticket Bot with WebSocket",
+    title="TiketHet with WebSocket",
     version="1.1.0",
     description="Demo версия с real-time обновлениями через WebSocket",
     lifespan=lifespan
@@ -154,7 +154,7 @@ mock_tickets = [
 async def health_check():
     return {
         "status": "healthy",
-        "message": "Telegram Ticket Bot WebSocket Server running",
+        "message": "TiketHet WebSocket Server running",
         "active_connections": len(manager.active_connections),
         "features": ["WebSocket", "Real-time notifications", "Live updates"]
     }
@@ -163,7 +163,7 @@ async def health_check():
 @app.get("/")
 async def root():
     return {
-        "message": "Добро пожаловать в Telegram Ticket Bot с WebSocket!",
+        "message": "Добро пожаловать в TiketHet с WebSocket!",
         "frontend_url": "/app/index.html",
         "api_docs": "/docs",
         "websocket_url": "/ws",
@@ -400,7 +400,7 @@ async def mock_categories():
 
 
 if __name__ == "__main__":
-    print("Запуск Telegram Ticket Bot WebSocket Server")
+    print("Запуск TiketHet WebSocket Server")
     print("Frontend: http://127.0.0.1:8000/app/index.html")
     print("API Docs: http://127.0.0.1:8000/docs")
     print("WebSocket: ws://127.0.0.1:8000/ws")

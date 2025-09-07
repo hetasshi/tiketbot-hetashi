@@ -91,6 +91,11 @@ static_path = Path("static")
 if static_path.exists():
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Frontend файлы
+frontend_path = Path("frontend")
+if frontend_path.exists():
+    app.mount("/app", StaticFiles(directory="frontend"), name="frontend")
+
 
 # Uploads
 uploads_path = Path(settings.upload_path)

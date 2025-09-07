@@ -1,4 +1,4 @@
-# 🎫 Telegram Ticket Bot
+# 🎫 TiketHet
 
 Профессиональная система тикетов поддержки для Telegram с современным Mini App интерфейсом.
 
@@ -29,7 +29,7 @@
 
 ## 🛠️ Технический стек
 
-- **Backend**: Python 3.11+ с FastAPI
+- **Backend**: Python 3.13+ с FastAPI
 - **База данных**: PostgreSQL + Redis
 - **Telegram**: aiogram 3.x для Bot API
 - **Фронтенд**: HTML/CSS/JS для Mini App
@@ -41,14 +41,14 @@
 ### 🚀 Demo версия (рекомендуется для ознакомления)
 ```bash
 # 1. Клонировать репозиторий
-git clone https://github.com/your-username/telegram-ticket-bot.git
-cd telegram-ticket-bot
+git clone https://github.com/hetasshi/tiketbot-hetashi.git
+cd tiketbot-hetashi
 
 # 2. Установить зависимости
 pip install -r requirements.txt
 
 # 3. Запустить demo сервер с WebSocket
-python websocket_server.py
+python src/servers/websocket_server.py
 
 # 4. Открыть в браузере
 # Frontend: http://127.0.0.1:8000/app/index.html
@@ -75,17 +75,17 @@ python websocket_server.py
 # 1-3. Как в demo версии
 
 # 4. Настроить переменные окружения
-cp config/.env.example .env
+cp deployment/config/.env.example deployment/config/.env
 # Отредактировать .env файл
 
 # 5. Запустить базу данных (Docker)
-docker-compose -f docker/docker-compose.yml up -d
+docker-compose -f deployment/docker/docker-compose.yml up -d
 
 # 6. Применить миграции
-alembic -c config/alembic.ini upgrade head
+alembic -c deployment/alembic/alembic.ini upgrade head
 
 # 7. Запустить production сервер
-uvicorn app.main:app --reload
+cd src && PYTHONPATH=. python servers/main.py
 ```
 
 ### Первый запуск
@@ -94,7 +94,8 @@ uvicorn app.main:app --reload
 2. **Получите токен** и добавьте в `.env`
 3. **Настройте Webhook** для Mini App
 4. **Запустите проект** командами выше
-5. **Откройте бота** в Telegram и введите `/start`
+5. **Запустите Telegram бота**: `cd src && PYTHONPATH=. python -m tikethet.telegram.bot`
+6. **Откройте бота** в Telegram и введите `/start`
 
 ## 🎮 Использование
 
@@ -127,24 +128,24 @@ uvicorn app.main:app --reload
 
 ```http
 # Авторизация
-POST /auth/telegram       # Вход через Telegram WebApp
-GET  /auth/me            # Информация о текущем пользователе
+POST /api/v1/auth/telegram       # Вход через Telegram WebApp
+GET  /api/v1/auth/me             # Информация о текущем пользователе
 
 # Тикеты  
-GET    /tickets          # Список тикетов
-POST   /tickets          # Создание тикета
-GET    /tickets/{id}     # Детали тикета
-PUT    /tickets/{id}     # Обновление тикета
-DELETE /tickets/{id}     # Удаление тикета
+GET    /api/v1/tickets          # Список тикетов
+POST   /api/v1/tickets          # Создание тикета
+GET    /api/v1/tickets/{id}     # Детали тикета
+PUT    /api/v1/tickets/{id}     # Обновление тикета
+DELETE /api/v1/tickets/{id}     # Удаление тикета
 
 # Сообщения
-POST /tickets/{id}/messages    # Добавить сообщение
-GET  /tickets/{id}/messages    # История сообщений
+POST /api/v1/tickets/{id}/messages    # Добавить сообщение
+GET  /api/v1/tickets/{id}/messages    # История сообщений
 
-# Администрирование
-GET  /users              # Список пользователей
-PUT  /users/{id}/role    # Изменение роли
-GET  /statistics         # Статистика и аналитика
+# Категории
+GET  /api/v1/categories         # Список категорий
+POST /api/v1/categories         # Создание категории
+PUT  /api/v1/categories/{id}    # Обновление категории
 ```
 
 ## 🚀 Развертывание
@@ -153,10 +154,10 @@ GET  /statistics         # Статистика и аналитика
 
 ```bash
 # Сборка образа
-docker build -f docker/Dockerfile -t telegram-ticket-bot .
+docker build -f deployment/docker/Dockerfile -t tikethet .
 
 # Запуск с docker-compose
-docker-compose -f docker/docker-compose.yml --profile production up -d
+docker-compose -f deployment/docker/docker-compose.yml --profile production up -d
 ```
 
 ### Обычное развертывание
@@ -164,21 +165,21 @@ docker-compose -f docker/docker-compose.yml --profile production up -d
 ```bash
 # Установка на production сервер
 pip install -r requirements.txt
-alembic upgrade head
+alembic -c deployment/alembic/alembic.ini upgrade head
 
 # Запуск с Gunicorn
-gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker
+cd src && PYTHONPATH=. gunicorn tikethet.main:app -w 4 -k uvicorn.workers.UvicornWorker
 ```
 
 ## 🎯 Roadmap
 
-- [x] **v1.0** - ✅ **MVP ЗАВЕРШЕН (98%)** - базовый функционал + WebSocket real-time
-- [ ] **v1.1** - 🚀 **ГОТОВ К СТАРТУ** - Файловые вложения и система категорий  
+- [x] **v1.0** - ✅ **MVP ЗАВЕРШЕН (100%)** - базовый функционал + WebSocket real-time
+- [ ] **v1.1** - 🚀 **ГОТОВ К СТАРТУ** - ngrok интеграция и файловые вложения  
 - [ ] **v1.2** - Расширенная аналитика и автоответы
 - [ ] **v1.3** - Интеграции с внешними системами
 - [ ] **v2.0** - White-label решение для продажи
 
-**🎉 СТАТУС:** MVP практически готов к демонстрации и тестированию!
+**🎉 СТАТУС:** MVP полностью готов к демонстрации и тестированию! Требуется только ngrok для публичного HTTPS доступа.
 
 ## 💰 Лицензия и монетизация
 

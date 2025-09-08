@@ -4,7 +4,7 @@
  */
 
 class WebSocketClient {
-    constructor(baseUrl = 'ws://127.0.0.1:8000') {
+    constructor(baseUrl = null) {
         this.baseUrl = baseUrl;
         this.socket = null;
         this.isConnected = false;
@@ -29,8 +29,27 @@ class WebSocketClient {
     /**
      * Инициализация WebSocket подключения
      */
-    init() {
+    async init() {
+        if (!this.baseUrl) {
+            await this.loadConfig();
+        }
         this.connect();
+    }
+    
+    /**
+     * Загрузка конфигурации с сервера
+     */
+    async loadConfig() {
+        try {
+            const response = await fetch('/api/config');
+            const config = await response.json();
+            this.baseUrl = config.websocket_url;
+            console.log('Загружена конфигурация WebSocket:', config);
+        } catch (error) {
+            console.error('Ошибка загрузки конфигурации:', error);
+            // Fallback на localhost для разработки
+            this.baseUrl = 'ws://127.0.0.1:8000';
+        }
     }
 
     /**

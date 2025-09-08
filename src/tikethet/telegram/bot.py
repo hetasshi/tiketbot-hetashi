@@ -36,7 +36,7 @@ async def set_bot_commands(bot: Bot):
     ]
     
     await bot.set_my_commands(commands)
-    logger.info("Команды бота установлены")
+    logger.info("Bot commands configured")
 
 
 async def setup_webhook(bot: Bot, settings) -> web.Application:
@@ -101,7 +101,7 @@ async def start_polling(bot: Bot, dp: Dispatcher):
     # Удаляем webhook если был установлен
     await bot.delete_webhook(drop_pending_updates=True)
     
-    logger.info("Запуск бота в режиме polling...")
+    logger.info("Bot started in polling mode")
     
     # Запускаем polling
     await dp.start_polling(bot)
@@ -121,12 +121,12 @@ async def main():
         stream=sys.stdout
     )
     
-    logger.info(f"Запуск Telegram бота {settings.app_name}")
-    logger.info(f"Режим разработки: {settings.debug}")
+    logger.info(f"Starting Telegram bot {settings.app_name}")
+    logger.info(f"Debug mode: {settings.debug}")
     
     # Проверяем токен бота
     if not settings.telegram_bot_token:
-        logger.error("TELEGRAM_BOT_TOKEN не установлен!")
+        logger.error("TELEGRAM_BOT_TOKEN not set!")
         return
     
     # Создаем экземпляр бота
@@ -138,14 +138,14 @@ async def main():
     try:
         # Получаем информацию о боте
         bot_info = await bot.get_me()
-        logger.info(f"Бот @{bot_info.username} успешно инициализирован")
+        logger.info(f"Bot @{bot_info.username} successfully initialized")
         
         # Устанавливаем команды
         await set_bot_commands(bot)
         
         if settings.webhook_mode:
             # Webhook режим для продакшен
-            logger.info("Запуск в webhook режиме")
+            logger.info("Starting in webhook mode")
             app = await setup_webhook(bot, settings)
             
             # Запускаем aiohttp сервер
@@ -156,12 +156,12 @@ async def main():
             )
         else:
             # Polling режим для разработки
-            logger.info("Запуск в polling режиме")
+            logger.info("Starting in polling mode")
             dp = Dispatcher()
             await start_polling(bot, dp)
             
     except Exception as e:
-        logger.error(f"Ошибка при запуске бота: {e}", exc_info=True)
+        logger.error(f"Bot startup error: {e}", exc_info=True)
     finally:
         # Закрываем сессию бота
         await bot.session.close()
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logger.info("Бот остановлен пользователем")
+        logger.info("Bot stopped by user")
     except Exception as e:
-        logger.error(f"Критическая ошибка: {e}", exc_info=True)
+        logger.error(f"Critical error: {e}", exc_info=True)
         sys.exit(1)

@@ -40,7 +40,7 @@ async def process_web_app_data(message: Message) -> None:
     try:
         # Парсим данные от Web App
         data = json.loads(message.web_app_data.data)
-        logger.info(f"Получены данные от Web App: {data}")
+        logger.info(f"Received Web App data: {data}")
         
         # Обрабатываем различные типы данных
         action = data.get("action")
@@ -252,4 +252,4 @@ def register_handlers(dp: Dispatcher) -> None:
         dp: Dispatcher для регистрации handlers
     """
     dp.include_router(router)
-    logger.info("Handlers Web App зарегистрированы")
+    logger.info("Web App handlers registered")

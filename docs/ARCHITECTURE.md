@@ -1,6 +1,6 @@
 # 🏗️ Архитектура системы
 
-Подробное описание архитектуры Telegram Ticket Bot системы.
+Подробное описание архитектуры TiketHet системы.
 
 ## 📋 Общий обзор
 
@@ -79,7 +79,7 @@
 
 ### 1. Telegram Integration Layer
 
-#### 1.1. Bot Handler (`app/telegram/`)
+#### 1.1. Bot Handler (`src/tikethet/telegram/`)
 
 **Ответственность:**
 - Обработка входящих команд и сообщений
@@ -89,7 +89,7 @@
 
 **Компоненты:**
 ```python
-app/telegram/
+src/tikethet/telegram/
 ├── bot.py                 # Основной бот и диспетчер
 ├── handlers/
 │   ├── start.py          # Команда /start
@@ -136,13 +136,13 @@ def validate_telegram_data(init_data: str, bot_token: str) -> bool:
     return computed_hash == extracted_hash
 ```
 
-### 2. API Layer (`app/api/`)
+### 2. API Layer (`src/tikethet/api/`)
 
 #### 2.1. REST API Endpoints
 
 **Структура маршрутов:**
 ```python
-app/api/
+src/tikethet/api/
 ├── v1/
 │   ├── auth.py           # JWT аутентификация
 │   ├── tickets.py        # CRUD операции с тикетами  
@@ -181,12 +181,12 @@ app/schemas/
 └── common.py             # Общие схемы (пагинация, ошибки)
 ```
 
-### 3. Business Logic Layer (`app/services/`)
+### 3. Business Logic Layer (`src/tikethet/services/`)
 
 #### 3.1. Service Layer Pattern
 
 ```python
-app/services/
+src/tikethet/services/
 ├── ticket_service.py     # Бизнес-логика тикетов
 ├── user_service.py       # Управление пользователями  
 ├── message_service.py    # Обработка сообщений
@@ -245,12 +245,12 @@ class EventBus:
         """Публикация события всем подписчикам"""
 ```
 
-### 4. WebSocket Layer (`app/websocket/`)
+### 4. WebSocket Layer (`src/tikethet/websocket/`)
 
 #### 4.1. Connection Management
 
 ```python
-app/websocket/
+src/tikethet/websocket/
 ├── connection_manager.py  # Управление подключениями
 ├── ticket_chat.py         # Chat в тикетах
 └── events.py             # WebSocket события
@@ -299,12 +299,12 @@ class WSEventType(Enum):
     ERROR = "error"
 ```
 
-### 5. Data Access Layer (`app/models/`)
+### 5. Data Access Layer (`src/tikethet/models/`)
 
 #### 5.1. SQLAlchemy Models
 
 ```python
-app/models/
+src/tikethet/models/
 ├── __init__.py          # Импорты и настройки
 ├── base.py              # Базовая модель
 ├── user.py              # Модель пользователя
@@ -330,7 +330,7 @@ class BaseModel:
 #### 5.2. Repository Pattern
 
 ```python
-app/repositories/
+src/tikethet/repositories/
 ├── base.py              # Базовый репозиторий
 ├── ticket.py            # Репозиторий тикетов
 ├── user.py              # Репозиторий пользователей
@@ -357,12 +357,12 @@ class BaseRepository:
         """Удаление записи"""
 ```
 
-### 6. Background Jobs (`app/celery/`)
+### 6. Background Jobs (`src/tikethet/celery/`)
 
 #### 6.1. Celery Tasks
 
 ```python
-app/celery/
+src/tikethet/celery/
 ├── __init__.py          # Celery app
 ├── tasks/
 │   ├── notifications.py # Отправка уведомлений

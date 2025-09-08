@@ -38,11 +38,11 @@ def update_env_file(new_url: str) -> bool:
     if re.search(old_pattern, content):
         # Заменяем существующую строку
         new_content = re.sub(old_pattern, new_line, content)
-        print(f"✅ Обновлен FRONTEND_URL в .env")
+        print(f"[OK] Обновлен FRONTEND_URL в .env")
     else:
         # Добавляем новую строку
         new_content = content + f'\n{new_line}\n'
-        print(f"✅ Добавлен FRONTEND_URL в .env")
+        print(f"[OK] Добавлен FRONTEND_URL в .env")
     
     # Записываем обратно
     with open(env_path, 'w', encoding='utf-8') as f:
@@ -53,42 +53,17 @@ def update_env_file(new_url: str) -> bool:
 
 def update_websocket_js(new_url: str) -> bool:
     """
-    Обновляет WebSocket URL в JavaScript файле.
+    WebSocket URL теперь загружается автоматически из /api/config.
+    Этот метод оставлен для обратной совместимости.
     
     Args:
-        new_url: Новый ngrok URL
+        new_url: Новый ngrok URL (игнорируется)
         
     Returns:
-        bool: True если обновление успешно
+        bool: True всегда
     """
-    js_path = Path('frontend/js/websocket.js')
-    
-    if not js_path.exists():
-        print("❌ Файл frontend/js/websocket.js не найден!")
-        return False
-    
-    # Читаем содержимое
-    with open(js_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-    
-    # Заменяем HTTP на WSS для WebSocket
-    ws_url = new_url.replace('https://', 'wss://').replace('http://', 'ws://')
-    
-    # Заменяем baseUrl в конструкторе
-    old_pattern = r"constructor\(baseUrl = '[^']*'\)"
-    new_line = f"constructor(baseUrl = '{ws_url}')"
-    
-    if re.search(old_pattern, content):
-        new_content = re.sub(old_pattern, new_line, content)
-        print(f"✅ Обновлен WebSocket URL в frontend/js/websocket.js")
-    else:
-        print("⚠️ Не найден паттерн для обновления WebSocket URL")
-        return False
-    
-    # Записываем обратно
-    with open(js_path, 'w', encoding='utf-8') as f:
-        f.write(new_content)
-    
+    print("[OK] WebSocket URL теперь загружается автоматически из API конфигурации")
+    print("   Нет необходимости вручную обновлять frontend/js/websocket.js")
     return True
 
 
@@ -115,7 +90,7 @@ def validate_url(url: str) -> bool:
 def main():
     """Основная функция скрипта."""
     if len(sys.argv) != 2:
-        print("🚀 Скрипт обновления ngrok URL для TiketHet")
+        print("Скрипт обновления ngrok URL для TiketHet")
         print("")
         print("Использование:")
         print("  python scripts/update_ngrok_url.py https://abc123.ngrok.io")
@@ -126,13 +101,13 @@ def main():
         print("  • Проверяет корректность URL")
         print("")
         print("После выполнения скрипта перезапустите:")
-        print("  • WebSocket сервер: python websocket_server.py") 
-        print("  • Telegram бот: python -m app.telegram.bot")
+        print("  • WebSocket сервер: python src/servers/websocket_server.py") 
+        print("  • Telegram бот: python -m src.tikethet.telegram.bot")
         sys.exit(1)
     
     new_url = sys.argv[1].rstrip('/')  # Убираем слеш в конце
     
-    print(f"🔄 Обновление конфигурации на URL: {new_url}")
+    print(f"Обновление конфигурации на URL: {new_url}")
     print("")
     
     # Проверяем URL
@@ -156,9 +131,9 @@ def main():
     
     if success:
         print("")
-        print("🎉 Конфигурация успешно обновлена!")
+        print("Конфигурация успешно обновлена!")
         print("")
-        print("🔄 Следующие шаги:")
+        print("Следующие шаги:")
         print("1. Перезапустите WebSocket сервер:")
         print("   python src/servers/websocket_server.py")
         print("")
@@ -169,7 +144,7 @@ def main():
         print("   /tickets -> кнопка 'Открыть тикеты'")
     else:
         print("")
-        print("❌ Обновление завершено с ошибками!")
+        print("Обновление завершено с ошибками!")
         sys.exit(1)
 
 

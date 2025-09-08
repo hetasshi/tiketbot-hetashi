@@ -1,12 +1,12 @@
 # 📦 Инструкция по установке
 
-Подробное руководство по установке и настройке Telegram Ticket Bot системы.
+Подробное руководство по установке и настройке TiketHet системы.
 
 ## 🔧 Системные требования
 
 ### Минимальные требования
 - **OS:** Linux Ubuntu 20.04+ / Windows 10+ / macOS 10.15+
-- **Python:** 3.11+
+- **Python:** 3.13+
 - **RAM:** 2GB (рекомендуется 4GB+)
 - **Storage:** 10GB свободного места (рекомендуется SSD)
 - **Network:** Стабильное интернет-соединение
@@ -35,8 +35,8 @@ sudo usermod -aG docker $USER
 #### 1.2. Клонирование и запуск
 ```bash
 # Клонировать репозиторий
-git clone https://github.com/your-username/telegram-ticket-bot.git
-cd telegram-ticket-bot
+git clone https://github.com/hetasshi/tiketbot-hetashi.git
+cd tiketbot-hetashi
 
 # Настроить переменные окружения
 cp .env.example .env
@@ -122,8 +122,8 @@ ALTER USER telegram_tickets CREATEDB;
 
 ```bash
 # Клонирование репозитория
-git clone https://github.com/your-username/telegram-ticket-bot.git
-cd telegram-ticket-bot
+git clone https://github.com/hetasshi/tiketbot-hetashi.git
+cd tiketbot-hetashi
 
 # Создание виртуального окружения
 python3.11 -m venv venv
@@ -138,18 +138,18 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # Настройка переменных окружения
-cp .env.example .env
+cp deployment/config/.env.example deployment/config/.env
 ```
 
 #### 2.4. Настройка .env файла
 
 ```bash
 # Откройте файл .env и настройте следующие параметры:
-nano .env
+nano deployment/config/.env
 ```
 
-**Обязательные параметры:**
-```env
+**Обязательные параметры (в `deployment/config/.env`):**
+```env  
 # База данных
 DATABASE_URL=postgresql://telegram_tickets:your_password@localhost:5432/telegram_tickets
 REDIS_URL=redis://localhost:6379/0
@@ -168,11 +168,11 @@ ADMIN_TELEGRAM_ID=123456789
 
 ```bash
 # Применение миграций базы данных
-alembic upgrade head
+alembic -c deployment/alembic/alembic.ini upgrade head
 
 # Проверка подключения к БД
 python -c "
-from app.database import engine
+from src.tikethet.database import engine
 from sqlalchemy import text
 with engine.connect() as conn:
     result = conn.execute(text('SELECT version();'))
@@ -183,11 +183,13 @@ with engine.connect() as conn:
 #### 2.6. Первый запуск
 
 ```bash
-# Запуск веб-сервера (разработка)
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+# Запуск веб-сервера (разработка) 
+python src/servers/main.py
+# ИЛИ через uvicorn:
+uvicorn src.servers.main:app --reload --host 127.0.0.1 --port 8000
 
 # В другом терминале - запуск бота
-python -m app.telegram.bot
+python -m src.tikethet.telegram.bot
 ```
 
 ## 🤖 Настройка Telegram бота
@@ -250,7 +252,7 @@ server {
     }
     
     location /uploads {
-        alias /path/to/telegram-ticket-bot/uploads;
+        alias /path/to/tiketbot-hetashi/uploads;
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
@@ -271,18 +273,18 @@ sudo certbot --nginx -d yourdomain.com
 
 **Веб-сервер:**
 ```ini
-# /etc/systemd/system/telegram-tickets-web.service
+# /etc/systemd/system/tikethet-web.service
 [Unit]
-Description=Telegram Tickets Web Server
+Description=TiketHet Web Server
 After=network.target postgresql.service redis.service
 
 [Service]
 Type=exec
 User=www-data
 Group=www-data
-WorkingDirectory=/path/to/telegram-ticket-bot
-Environment=PATH=/path/to/telegram-ticket-bot/venv/bin
-ExecStart=/path/to/telegram-ticket-bot/venv/bin/gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000
+WorkingDirectory=/path/to/tiketbot-hetashi
+Environment=PATH=/path/to/tiketbot-hetashi/venv/bin
+ExecStart=/path/to/tiketbot-hetashi/venv/bin/gunicorn src.servers.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000
 Restart=always
 RestartSec=5
 
@@ -292,18 +294,18 @@ WantedBy=multi-user.target
 
 **Telegram бот:**
 ```ini
-# /etc/systemd/system/telegram-tickets-bot.service
+# /etc/systemd/system/tikethet-bot.service
 [Unit]
-Description=Telegram Tickets Bot
+Description=TiketHet Bot
 After=network.target postgresql.service redis.service
 
 [Service]
 Type=exec
 User=www-data
 Group=www-data
-WorkingDirectory=/path/to/telegram-ticket-bot
-Environment=PATH=/path/to/telegram-ticket-bot/venv/bin
-ExecStart=/path/to/telegram-ticket-bot/venv/bin/python -m app.telegram.bot
+WorkingDirectory=/path/to/tiketbot-hetashi
+Environment=PATH=/path/to/tiketbot-hetashi/venv/bin
+ExecStart=/path/to/tiketbot-hetashi/venv/bin/python -m src.tikethet.telegram.bot
 Restart=always
 RestartSec=5
 
@@ -314,12 +316,12 @@ WantedBy=multi-user.target
 ```bash
 # Запуск сервисов
 sudo systemctl daemon-reload
-sudo systemctl enable telegram-tickets-web telegram-tickets-bot
-sudo systemctl start telegram-tickets-web telegram-tickets-bot
+sudo systemctl enable tikethet-web tikethet-bot
+sudo systemctl start tikethet-web tikethet-bot
 
-# Проверка статуса
-sudo systemctl status telegram-tickets-web
-sudo systemctl status telegram-tickets-bot
+# Проверка статуса  
+sudo systemctl status tikethet-web
+sudo systemctl status tikethet-bot
 ```
 
 ## 🛠️ Дополнительные настройки
@@ -328,8 +330,8 @@ sudo systemctl status telegram-tickets-bot
 
 ```bash
 # Создание папки для логов
-sudo mkdir -p /var/log/telegram-tickets
-sudo chown www-data:www-data /var/log/telegram-tickets
+sudo mkdir -p /var/log/tikethet
+sudo chown www-data:www-data /var/log/tikethet
 ```
 
 ### 5.2. Настройка резервного копирования
@@ -339,7 +341,7 @@ sudo chown www-data:www-data /var/log/telegram-tickets
 cat > backup.sh << 'EOF'
 #!/bin/bash
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="/backups/telegram-tickets"
+BACKUP_DIR="/backups/tikethet"
 mkdir -p "$BACKUP_DIR"
 
 # Бекап базы данных
@@ -358,7 +360,7 @@ EOF
 chmod +x backup.sh
 
 # Добавление в crontab для автоматического бекапа
-(crontab -l 2>/dev/null; echo "0 2 * * * /path/to/telegram-ticket-bot/backup.sh") | crontab -
+(crontab -l 2>/dev/null; echo "0 2 * * * /path/to/tiketbot-hetashi/backup.sh") | crontab -
 ```
 
 ### 5.3. Настройка мониторинга
@@ -386,7 +388,7 @@ EOF
 chmod +x healthcheck.sh
 
 # Добавить в crontab для проверки каждые 5 минут
-(crontab -l 2>/dev/null; echo "*/5 * * * * /path/to/telegram-ticket-bot/healthcheck.sh") | crontab -
+(crontab -l 2>/dev/null; echo "*/5 * * * * /path/to/tiketbot-hetashi/healthcheck.sh") | crontab -
 ```
 
 ## 🔍 Тестирование установки
@@ -459,8 +461,8 @@ curl -i -N -H "Connection: Upgrade" -H "Upgrade: websocket" \
 
 ```bash
 # Просмотр логов приложения
-sudo journalctl -u telegram-tickets-web -f
-sudo journalctl -u telegram-tickets-bot -f
+sudo journalctl -u tikethet-web -f
+sudo journalctl -u tikethet-bot -f
 
 # Логи Nginx
 sudo tail -f /var/log/nginx/access.log

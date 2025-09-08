@@ -317,4 +317,4 @@ def register_handlers(dp: Dispatcher) -> None:
         dp: Dispatcher для регистрации handlers
     """
     dp.include_router(router)
-    logger.info("Административные handlers зарегистрированы")
+    logger.info("Admin handlers registered")

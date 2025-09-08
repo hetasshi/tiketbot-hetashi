@@ -211,4 +211,4 @@ def register_handlers(dp: Dispatcher) -> None:
         dp: Dispatcher для регистрации handlers
     """
     dp.include_router(router)
-    logger.info("Handlers команд зарегистрированы")
+    logger.info("Command handlers registered")

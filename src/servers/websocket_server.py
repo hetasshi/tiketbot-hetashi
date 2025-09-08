@@ -14,6 +14,12 @@ import asyncio
 from typing import List, Dict, Any
 from datetime import datetime
 import uuid
+import os
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения
+env_path = Path(__file__).parent.parent.parent / "deployment" / "config" / ".env"
+load_dotenv(env_path)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,6 +46,13 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# Middleware для обхода ngrok warning
+@app.middleware("http")
+async def add_ngrok_header(request, call_next):
+    response = await call_next(request)
+    response.headers["ngrok-skip-browser-warning"] = "true"
+    return response
 
 # Frontend файлы
 frontend_path = Path("frontend")
@@ -159,20 +172,36 @@ async def health_check():
         "features": ["WebSocket", "Real-time notifications", "Live updates"]
     }
 
-# Root endpoint
+# Configuration endpoint for frontend
+@app.get("/api/config")
+async def get_config():
+    import os
+    frontend_url = os.getenv("FRONTEND_URL", "https://localhost:8000")
+    websocket_url = frontend_url.replace("https://", "wss://").replace("http://", "ws://")
+    
+    return {
+        "frontend_url": frontend_url,
+        "websocket_url": websocket_url,
+        "api_base": frontend_url + "/api"
+    }
+
+# Additional routes to handle common browser requests
+@app.get("/tickets")
+async def tickets_redirect():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/app/index.html")
+
+@app.get("/favicon.ico")
+async def favicon():
+    from fastapi.responses import Response
+    # Return empty response to prevent 404 errors
+    return Response(content="", media_type="image/x-icon")
+
+# Root endpoint - redirect to Mini App
 @app.get("/")
 async def root():
-    return {
-        "message": "Добро пожаловать в TiketHet с WebSocket!",
-        "frontend_url": "/app/index.html",
-        "api_docs": "/docs",
-        "websocket_url": "/ws",
-        "features": {
-            "real_time": True,
-            "websocket_support": True,
-            "live_notifications": True
-        }
-    }
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/app/index.html")
 
 
 # WebSocket endpoint (следуя документации FastAPI)
@@ -336,7 +365,7 @@ async def mock_me():
     }
 
 @app.get("/api/v1/tickets")
-async def mock_tickets():
+async def get_tickets():
     return {
         "items": mock_tickets,
         "total": len(mock_tickets),
@@ -400,12 +429,12 @@ async def mock_categories():
 
 
 if __name__ == "__main__":
-    print("Запуск TiketHet WebSocket Server")
+    print("Starting TiketHet WebSocket Server")
     print("Frontend: http://127.0.0.1:8000/app/index.html")
     print("API Docs: http://127.0.0.1:8000/docs")
     print("WebSocket: ws://127.0.0.1:8000/ws")
-    print("Доступно по адресу: http://127.0.0.1:8000")
-    print("Real-time обновления включены!")
+    print("Available at: http://127.0.0.1:8000")
+    print("Real-time updates enabled!")
     
     uvicorn.run(
         "websocket_server:app",

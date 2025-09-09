@@ -5,8 +5,9 @@
 class API {
     constructor() {
         // Настройки API
-        this.baseURL = 'http://127.0.0.1:8000/api/v1';
+        this.baseURL = null; // Будет загружен динамически
         this.token = null;
+        this.configLoaded = false;
         
         // Инициализация при создании экземпляра
         this.init();
@@ -15,18 +16,121 @@ class API {
     /**
      * Инициализация API
      */
-    init() {
-        // Получаем токен из localStorage если есть
-        this.token = localStorage.getItem('auth_token');
-        
-        // Telegram WebApp инициализация
-        if (window.Telegram?.WebApp) {
-            window.Telegram.WebApp.ready();
-            window.Telegram.WebApp.expand();
+    async init() {
+        try {
+            console.log('Инициализация API начата...');
             
-            // Применяем цветовую схему Telegram
-            this.applyTelegramTheme();
+            // Мобильная задержка для стабильности
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Загружаем конфигурацию с сервера
+            await this.loadConfig();
+            
+            // Получаем токен из localStorage если есть
+            this.token = localStorage.getItem('auth_token');
+            
+            // Telegram WebApp инициализация
+            if (window.Telegram?.WebApp) {
+                console.log('Инициализация Telegram WebApp...');
+                
+                // Готовность приложения
+                window.Telegram.WebApp.ready();
+                
+                // Расширение до полного размера
+                try {
+                    window.Telegram.WebApp.expand();
+                } catch (e) {
+                    console.warn('Expand не поддерживается:', e);
+                }
+                
+                // Применяем цветовую схему Telegram
+                this.applyTelegramTheme();
+                
+                console.log('Telegram WebApp инициализирован');
+            } else {
+                console.log('Запуск вне Telegram WebApp (demo режим)');
+            }
+            
+            console.log('API инициализирован успешно');
+        } catch (error) {
+            console.error('Ошибка инициализации API:', error);
+            // Продолжаем работу с fallback настройками
+            this.configLoaded = true;
         }
+    }
+
+    /**
+     * Загрузка конфигурации с сервера
+     */
+    async loadConfig() {
+        try {
+            console.log('Загрузка конфигурации API...');
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд таймаут
+            
+            const response = await fetch('/api/config', {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true',
+                    'Cache-Control': 'no-cache'
+                },
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const config = await response.json();
+            
+            // Устанавливаем базовый URL для API
+            this.baseURL = config.api_base + '/v1';
+            this.configLoaded = true;
+            
+            console.log('Конфигурация API загружена:', config);
+            console.log('API Base URL:', this.baseURL);
+            
+        } catch (error) {
+            console.error('Ошибка загрузки конфигурации API:', error);
+            
+            // Fallback на ngrok URL если мы в Telegram
+            if (window.Telegram?.WebApp) {
+                this.baseURL = 'https://untabled-presuitably-owen.ngrok-free.app/api/v1';
+                console.log('Fallback на ngrok URL:', this.baseURL);
+            } else {
+                // Fallback на localhost для разработки
+                this.baseURL = 'http://127.0.0.1:8000/api/v1';
+                console.log('Fallback на localhost:', this.baseURL);
+            }
+            
+            this.configLoaded = true;
+        }
+    }
+
+    /**
+     * Ожидание загрузки конфигурации
+     */
+    async waitForConfig() {
+        console.log('🔄 Ожидание загрузки конфигурации...');
+        let attempts = 0;
+        const maxAttempts = 100;
+        
+        while (!this.configLoaded && attempts < maxAttempts) {
+            if (attempts % 10 === 0) {
+                console.log(`🔄 Ожидание конфигурации, попытка ${attempts + 1}/${maxAttempts}`);
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        if (!this.configLoaded) {
+            console.error('❌ Таймаут загрузки конфигурации');
+            throw new Error('Configuration load timeout');
+        }
+        
+        console.log('✅ Конфигурация загружена:', this.baseURL);
     }
 
     /**
@@ -48,7 +152,11 @@ class API {
         }
 
         // Устанавливаем цвет заголовка
-        webApp.setHeaderColor(webApp.themeParams.bg_color || '#ffffff');
+        try {
+            webApp.setHeaderColor(webApp.themeParams.bg_color || '#ffffff');
+        } catch (e) {
+            console.warn('Header color не поддерживается:', e);
+        }
         
         // Настраиваем главную кнопку (по умолчанию скрыта)
         webApp.MainButton.hide();
@@ -58,11 +166,16 @@ class API {
      * Выполнение HTTP запроса
      */
     async request(endpoint, options = {}) {
+        // Ожидаем загрузки конфигурации
+        await this.waitForConfig();
+        
         const url = `${this.baseURL}${endpoint}`;
         const config = {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true', // Обход ngrok предупреждения
+                'Cache-Control': 'no-cache', // Принудительное обновление для мобильных
                 ...options.headers
             },
             ...options
@@ -74,17 +187,34 @@ class API {
         }
 
         try {
+            console.log('API request:', { url, method: config.method, headers: config.headers });
+            
             const response = await fetch(url, config);
+            
+            console.log('API response status:', response.status);
             
             // Проверяем статус ответа
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
+                let errorData;
+                try {
+                    errorData = await response.json();
+                } catch {
+                    errorData = { message: `HTTP ${response.status} ${response.statusText}` };
+                }
                 throw new Error(errorData.message || `HTTP ${response.status}`);
             }
 
-            return await response.json();
+            const data = await response.json();
+            console.log('API response data:', data);
+            return data;
+            
         } catch (error) {
-            console.error('API request failed:', error);
+            console.error('API request failed:', {
+                url,
+                method: config.method,
+                error: error.message,
+                stack: error.stack
+            });
             throw error;
         }
     }
@@ -142,6 +272,13 @@ class API {
 
         const query = searchParams.toString();
         const endpoint = `/tickets${query ? `?${query}` : ''}`;
+        
+        console.log('API getTickets - вызов:', {
+            baseURL: this.baseURL,
+            endpoint: endpoint,
+            fullURL: `${this.baseURL}${endpoint}`,
+            params: params
+        });
 
         return await this.request(endpoint);
     }

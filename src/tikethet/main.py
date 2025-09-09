@@ -79,6 +79,21 @@ app.add_middleware(
 )
 
 
+# Middleware для обхода ngrok warning
+@app.middleware("http")
+async def add_ngrok_header(request, call_next):
+    response = await call_next(request)
+    response.headers["ngrok-skip-browser-warning"] = "true"
+    
+    # Для мобильных браузеров - добавляем дополнительные заголовки
+    user_agent = request.headers.get("user-agent", "").lower()
+    if any(mobile in user_agent for mobile in ["mobile", "android", "iphone", "telegram"]):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+    
+    return response
+
+
 # Middleware для безопасности
 app.add_middleware(
     TrustedHostMiddleware,
@@ -126,6 +141,36 @@ async def root():
         "docs_url": "/docs" if settings.debug else None,
         "health_check": "/health"
     }
+
+
+# Configuration endpoint for frontend
+@app.get("/api/config", tags=["system"])
+async def get_config():
+    """Конфигурация для frontend приложения."""
+    import os
+    frontend_url = os.getenv("FRONTEND_URL", f"http://{settings.host}:{settings.port}")
+    websocket_url = frontend_url.replace("https://", "wss://").replace("http://", "ws://")
+    
+    return {
+        "frontend_url": frontend_url,
+        "websocket_url": websocket_url,
+        "api_base": frontend_url + "/api"
+    }
+
+
+# Additional routes to handle common browser requests
+@app.get("/tickets", tags=["system"])
+async def tickets_redirect():
+    """Перенаправление на Mini App."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/app/index.html")
+
+
+@app.get("/favicon.ico", tags=["system"])
+async def favicon():
+    """Обработка запроса фавикона."""
+    from fastapi.responses import Response
+    return Response(content="", media_type="image/x-icon")
 
 
 # Обработчик ошибок

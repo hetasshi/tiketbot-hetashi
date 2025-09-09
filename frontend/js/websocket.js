@@ -30,10 +30,24 @@ class WebSocketClient {
      * Инициализация WebSocket подключения
      */
     async init() {
-        if (!this.baseUrl) {
-            await this.loadConfig();
+        try {
+            if (!this.baseUrl) {
+                await this.loadConfig();
+            }
+            
+            // Увеличенная задержка для стабильности на мобильных устройствах
+            const isMobile = window.Telegram?.WebApp?.platform === 'android' || window.Telegram?.WebApp?.platform === 'ios';
+            const delay = isMobile ? 2000 : 1000; // 2 секунды для мобильных
+            
+            setTimeout(() => {
+                this.connect();
+            }, delay);
+            
+        } catch (error) {
+            console.error('Ошибка инициализации WebSocket:', error);
+            // Fallback для работы без WebSocket
+            this.isConnected = false;
         }
-        this.connect();
     }
     
     /**
@@ -41,7 +55,11 @@ class WebSocketClient {
      */
     async loadConfig() {
         try {
-            const response = await fetch('/api/config');
+            const response = await fetch('/api/config', {
+                headers: {
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
             const config = await response.json();
             this.baseUrl = config.websocket_url;
             console.log('Загружена конфигурация WebSocket:', config);
@@ -56,14 +74,29 @@ class WebSocketClient {
      * Подключение к WebSocket серверу
      */
     connect() {
+        // Проверяем доступность WebSocket в браузере
+        if (!window.WebSocket) {
+            console.warn('WebSocket не поддерживается в этом браузере');
+            return;
+        }
+        
         try {
             console.log('Подключение к WebSocket...', `${this.baseUrl}/ws`);
             
             // Создаем WebSocket подключение
             this.socket = new WebSocket(`${this.baseUrl}/ws`);
             
+            // Таймаут для подключения (мобильные сети могут быть медленными)
+            const connectionTimeout = setTimeout(() => {
+                if (this.socket && this.socket.readyState === WebSocket.CONNECTING) {
+                    console.warn('Таймаут подключения WebSocket');
+                    this.socket.close();
+                }
+            }, 10000);
+            
             // Обработчик успешного подключения
             this.socket.onopen = (event) => {
+                clearTimeout(connectionTimeout);
                 console.log('✅ WebSocket подключен');
                 this.isConnected = true;
                 this.reconnectAttempts = 0;
@@ -95,6 +128,7 @@ class WebSocketClient {
             
             // Обработчик закрытия соединения
             this.socket.onclose = (event) => {
+                clearTimeout(connectionTimeout);
                 console.log('🔌 WebSocket отключен', event.code, event.reason);
                 this.isConnected = false;
                 this.stopHeartbeat();
@@ -102,12 +136,15 @@ class WebSocketClient {
                 // Вызываем обработчики события отключения
                 this.emit('disconnect', { code: event.code, reason: event.reason });
                 
-                // Автоматическое переподключение
-                this.scheduleReconnect();
+                // Автоматическое переподключение только для неожиданных отключений
+                if (event.code !== 1000 && event.code !== 1001) {
+                    this.scheduleReconnect();
+                }
             };
             
             // Обработчик ошибок
             this.socket.onerror = (error) => {
+                clearTimeout(connectionTimeout);
                 console.error('❌ Ошибка WebSocket:', error);
                 this.emit('error', { error: error });
             };

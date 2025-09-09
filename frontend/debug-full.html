@@ -2,34 +2,48 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="format-detection" content="telephone=no">
-    <title>TiketHet - Support System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TiketHet Debug</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        .debug { 
+            position: fixed; 
+            top: 0; 
+            right: 0; 
+            width: 300px; 
+            height: 100vh; 
+            background: rgba(0,0,0,0.9); 
+            color: white; 
+            overflow-y: auto; 
+            z-index: 9999; 
+            padding: 10px; 
+            font-size: 12px;
+        }
+        .log { margin: 2px 0; padding: 2px; }
+        .log.error { background: #f44336; }
+        .log.success { background: #4caf50; }
+        .log.info { background: #2196f3; }
+    </style>
 </head>
 <body>
-    <div id="app" class="app">
-        <!-- Header -->
+    <div id="debug" class="debug">
+        <h3>Debug Console</h3>
+        <div id="debugLogs"></div>
+    </div>
+
+    <div class="container">
         <header class="header">
-            <div class="header__left">
-                <h1 class="header__title">TiketHet</h1>
-                <div id="connectionStatus" class="connection-status">
-                    <span class="connection-status__dot"></span>
-                    <span class="connection-status__text">Подключение...</span>
-                </div>
+            <h1 class="header__title">TiketHet Debug</h1>
+            <div id="connectionStatus" class="connection-status connection-status--disconnected">
+                <span class="connection-status__text">Не подключено</span>
             </div>
         </header>
 
-        <!-- Main content -->
         <main class="main">
             <!-- Loading state -->
-            <div id="loading" class="loading">
+            <div id="loading" class="loading" style="display: block;">
                 <div class="loading__spinner"></div>
-                <p class="loading__text">Загружаем тикеты...</p>
+                <p class="loading__text">Загрузка...</p>
             </div>
 
             <!-- Error state -->
@@ -45,7 +59,7 @@
                 <div class="empty-state__icon icon-document"></div>
                 <h3 class="empty-state__title">У вас пока нет тикетов</h3>
                 <p class="empty-state__description">
-                    Создайте свой первый тикет поддержки, чтобы получить помощь от нашей команды
+                    Создайте свой первый тикет поддержки
                 </p>
                 <button id="createFirstTicketBtn" class="btn btn--primary">
                     Создать первый тикет
@@ -54,28 +68,15 @@
 
             <!-- Tickets list -->
             <div id="ticketsList" class="tickets-list" style="display: none;">
-                <!-- Filter buttons -->
                 <div class="filter">
-                    <button class="filter__btn filter__btn--active" data-status="all">
-                        Все
-                    </button>
-                    <button class="filter__btn" data-status="OPEN">
-                        Открытые
-                    </button>
-                    <button class="filter__btn" data-status="IN_PROGRESS">
-                        В работе
-                    </button>
-                    <button class="filter__btn" data-status="CLOSED">
-                        Закрытые
-                    </button>
+                    <button class="filter__btn filter__btn--active" data-status="all">Все</button>
+                    <button class="filter__btn" data-status="OPEN">Открытые</button>
                 </div>
 
-                <!-- Tickets container -->
                 <div id="ticketsContainer" class="tickets">
-                    <!-- Tickets will be inserted here -->
+                    <!-- Tickets here -->
                 </div>
 
-                <!-- Load more button -->
                 <button id="loadMoreBtn" class="btn btn--secondary btn--full" style="display: none;">
                     Загрузить еще
                 </button>
@@ -83,12 +84,6 @@
         </main>
     </div>
 
-    <!-- Floating Action Button -->
-    <button id="fabCreateTicket" class="fab" title="Создать новый тикет">
-        +
-    </button>
-
-    <!-- Ticket template -->
     <template id="ticketTemplate">
         <div class="ticket">
             <div class="ticket__header">
@@ -121,6 +116,37 @@
             </div>
         </div>
     </template>
+
+    <script>
+        // Debug logging
+        function debugLog(message, type = 'info') {
+            const debugLogs = document.getElementById('debugLogs');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log ${type}`;
+            logDiv.innerHTML = `${new Date().toLocaleTimeString()}: ${message}`;
+            debugLogs.appendChild(logDiv);
+            debugLogs.scrollTop = debugLogs.scrollHeight;
+            
+            // Also log to console
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // Override console methods
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            debugLog(args.join(' '), 'info');
+            originalLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            debugLog(args.join(' '), 'error');
+            originalError.apply(console, args);
+        };
+
+        debugLog('Debug page loaded');
+    </script>
 
     <script src="js/api.js"></script>
     <script src="js/websocket.js"></script>

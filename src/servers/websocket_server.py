@@ -116,13 +116,13 @@ manager = ConnectionManager()
 mock_tickets = [
     {
         "id": "ticket-001",
-        "title": "Проблема с подключением к серверу",
-        "description": "Не могу подключиться к игровому серверу. Постоянно выдает ошибку таймаута.",
+        "title": "Server Connection Issue",
+        "description": "Cannot connect to game server. Getting timeout error constantly.",
         "status": "OPEN",
         "priority": "HIGH",
         "category": {
             "id": "tech-issues",
-            "name": "Технические проблемы",
+            "name": "Technical Issues",
             "icon": "🔧"
         },
         "messages_count": 3,
@@ -131,13 +131,13 @@ mock_tickets = [
     },
     {
         "id": "ticket-002", 
-        "title": "Вопрос по оплате подписки",
-        "description": "Хочу продлить премиум подписку, но не понимаю как это сделать через ваш бот.",
+        "title": "Payment Question",
+        "description": "Want to renew premium subscription but don't understand how to do it through your bot.",
         "status": "IN_PROGRESS",
         "priority": "NORMAL",
         "category": {
             "id": "payment",
-            "name": "Оплата и подписки",
+            "name": "Payment & Billing",
             "icon": "💳"
         },
         "messages_count": 1,
@@ -146,13 +146,13 @@ mock_tickets = [
     },
     {
         "id": "ticket-003",
-        "title": "Жалоба на игрока",
-        "description": "Игрок с ником CheaterXX использует читы на сервере Survival. Прошу разобраться.",
+        "title": "Player Report",
+        "description": "Player with nickname CheaterXX is using cheats on Survival server. Please investigate.",
         "status": "RESOLVED",
         "priority": "NORMAL", 
         "category": {
             "id": "reports",
-            "name": "Жалобы на игроков",
+            "name": "Player Reports",
             "icon": "🚨"
         },
         "messages_count": 5,
@@ -176,7 +176,8 @@ async def health_check():
 @app.get("/api/config")
 async def get_config():
     import os
-    frontend_url = os.getenv("FRONTEND_URL", "https://localhost:8000")
+    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:8000")
+    # Правильное преобразование URL для WebSocket
     websocket_url = frontend_url.replace("https://", "wss://").replace("http://", "ws://")
     
     return {
@@ -369,9 +370,11 @@ async def get_tickets():
     return {
         "items": mock_tickets,
         "total": len(mock_tickets),
+        "skip": 0,
+        "limit": 20,
         "page": 1,
-        "size": 20,
-        "pages": 1
+        "pages": 1,
+        "size": 20
     }
 
 # Новый endpoint для тестирования WebSocket уведомлений
@@ -398,8 +401,8 @@ async def mock_categories():
     return [
         {
             "id": "tech-issues",
-            "name": "Технические проблемы",
-            "description": "Проблемы с подключением, лагами, багами",
+            "name": "Technical Issues",
+            "description": "Connection, lag, bug problems",
             "icon": "🔧",
             "color": "#4ECDC4",
             "is_active": True,
@@ -407,8 +410,8 @@ async def mock_categories():
         },
         {
             "id": "payment",
-            "name": "Оплата и подписки",
-            "description": "Вопросы по оплате, возврату средств",
+            "name": "Payment & Billing",
+            "description": "Payment, refund questions",
             "icon": "💳", 
             "color": "#45B7D1",
             "is_active": True,
@@ -416,8 +419,8 @@ async def mock_categories():
         },
         {
             "id": "reports",
-            "name": "Жалобы на игроков",
-            "description": "Нарушения правил, читы, токсичность",
+            "name": "Player Reports",
+            "description": "Rule violations, cheats, toxicity",
             "icon": "🚨",
             "color": "#F39C12",
             "is_active": True,

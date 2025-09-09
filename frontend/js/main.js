@@ -19,7 +19,7 @@ class TicketApp {
             ticketsList: document.getElementById('ticketsList'),
             ticketsContainer: document.getElementById('ticketsContainer'),
             loadMoreBtn: document.getElementById('loadMoreBtn'),
-            createTicketBtn: document.getElementById('createTicketBtn'),
+            fabCreateTicket: document.getElementById('fabCreateTicket'),
             createFirstTicketBtn: document.getElementById('createFirstTicketBtn'),
             retryBtn: document.getElementById('retryBtn'),
             errorMessage: document.getElementById('errorMessage'),
@@ -27,6 +27,21 @@ class TicketApp {
             ticketTemplate: document.getElementById('ticketTemplate'),
             connectionStatus: document.getElementById('connectionStatus')
         };
+        
+        // Проверяем, что все ключевые элементы найдены
+        const missingElements = [];
+        if (!this.elements.loading) missingElements.push('loading');
+        if (!this.elements.error) missingElements.push('error');
+        if (!this.elements.emptyState) missingElements.push('emptyState');
+        if (!this.elements.ticketsList) missingElements.push('ticketsList');
+        if (!this.elements.ticketsContainer) missingElements.push('ticketsContainer');
+        if (!this.elements.ticketTemplate) missingElements.push('ticketTemplate');
+        
+        if (missingElements.length > 0) {
+            console.error('Не найдены DOM элементы:', missingElements);
+        } else {
+            console.log('Все ключевые DOM элементы найдены');
+        }
 
         this.init();
     }
@@ -36,11 +51,34 @@ class TicketApp {
      */
     async init() {
         try {
+            console.log('Инициализация TicketApp начата...');
+            
+            // Добавляем небольшую задержку для стабильности на мобильных
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Ожидаем инициализации API с таймаутом
+            if (window.api && !window.api.configLoaded) {
+                console.log('Ожидаем загрузки конфигурации API...');
+                const timeout = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('API timeout')), 10000)
+                );
+                
+                try {
+                    await Promise.race([
+                        window.api.waitForConfig(),
+                        timeout
+                    ]);
+                    console.log('Конфигурация API загружена');
+                } catch (timeoutError) {
+                    console.warn('Таймаут загрузки API, продолжаем с fallback');
+                }
+            }
+            
             // Настройка обработчиков событий
             this.setupEventListeners();
 
-            // Инициализация WebSocket соединения
-            this.setupWebSocket();
+            // Инициализация WebSocket соединения (с задержкой)
+            setTimeout(() => this.setupWebSocket(), 1000);
 
             // Попытка авторизации
             await this.authenticate();
@@ -48,9 +86,11 @@ class TicketApp {
             // Загрузка тикетов
             await this.loadTickets();
 
+            console.log('Инициализация TicketApp завершена успешно');
+
         } catch (error) {
             console.error('Ошибка инициализации:', error);
-            this.showError('Ошибка загрузки приложения');
+            this.showError(`Ошибка загрузки приложения: ${error.message}`);
         }
     }
 
@@ -60,9 +100,12 @@ class TicketApp {
     setupWebSocket() {
         if (!window.wsClient) {
             console.warn('WebSocket клиент недоступен');
+            this.updateConnectionStatus('disconnected', 'WebSocket недоступен');
             return;
         }
 
+        console.log('Настройка WebSocket соединения...');
+        
         // Обновляем статус подключения
         this.updateConnectionStatus('connecting', 'Подключение...');
 
@@ -70,6 +113,11 @@ class TicketApp {
         window.wsClient.on('connection_established', (data) => {
             console.log('WebSocket подключен:', data);
             this.updateConnectionStatus('connected', 'Подключено');
+            
+            // Haptic feedback для подтверждения подключения
+            if (window.api) {
+                window.api.hapticFeedback('light');
+            }
         });
 
         // Обработчик отключения
@@ -93,7 +141,9 @@ class TicketApp {
         window.wsClient.on('new_ticket_message', (data) => {
             console.log('Новое сообщение в тикете:', data);
             // Показываем уведомление
-            api.showNotification(`Новое сообщение в тикете "${data.ticket_title}"`);
+            if (window.api) {
+                window.api.showNotification(`Новое сообщение в тикете "${data.ticket_title}"`);
+            }
         });
     }
 
@@ -117,8 +167,8 @@ class TicketApp {
      * Настройка обработчиков событий
      */
     setupEventListeners() {
-        // Кнопки создания тикета
-        this.elements.createTicketBtn?.addEventListener('click', () => {
+        // FAB кнопка создания тикета
+        this.elements.fabCreateTicket?.addEventListener('click', () => {
             this.createTicket();
         });
         
@@ -160,14 +210,14 @@ class TicketApp {
     async authenticate() {
         try {
             // Если токен уже есть, проверим его
-            if (api.isAuthenticated()) {
-                const user = await api.getCurrentUser();
+            if (window.api.isAuthenticated()) {
+                const user = await window.api.getCurrentUser();
                 console.log('Пользователь авторизован:', user);
                 return user;
             }
 
             // Авторизация через Telegram WebApp
-            const authData = await api.authenticate();
+            const authData = await window.api.authenticate();
             console.log('Авторизация успешна:', authData.user);
             
             return authData.user;
@@ -207,6 +257,23 @@ class TicketApp {
         try {
             this.isLoading = true;
             this.showLoading();
+            
+            // Проверяем, что API доступен
+            if (!window.api) {
+                throw new Error('API не доступен');
+            }
+            
+            // Ожидаем готовности API
+            if (!window.api.configLoaded) {
+                console.log('Ожидаем загрузки конфигурации API...');
+                await this.waitForAPIConfig();
+                console.log('Конфигурация API готова, baseURL:', window.api.baseURL);
+            }
+            
+            // Проверяем, что baseURL установлен
+            if (!window.api.baseURL) {
+                throw new Error('API baseURL не установлен');
+            }
 
             const params = {
                 page: 1,
@@ -217,8 +284,12 @@ class TicketApp {
             if (this.currentFilter !== 'all') {
                 params.status = this.currentFilter;
             }
-
-            const response = await api.getTickets(params);
+            
+            console.log('Запрос тикетов с параметрами:', params);
+            console.log('API baseURL:', window.api.baseURL);
+            
+            const response = await window.api.getTickets(params);
+            console.log('Ответ от API:', response);
             
             this.tickets = response.items || [];
             this.currentPage = 1;
@@ -227,11 +298,32 @@ class TicketApp {
             this.renderTickets();
 
         } catch (error) {
-            console.error('Ошибка загрузки тикетов:', error);
-            this.showError('Не удалось загрузить тикеты');
+            console.error('\ud83d\udd34 Ошибка загрузки тикетов:', error);
+            this.showError(`Не удалось загрузить тикеты: ${error.message}`);
         } finally {
             this.isLoading = false;
         }
+    }
+
+    /**
+     * Ожидание готовности API конфигурации
+     */
+    async waitForAPIConfig() {
+        const maxAttempts = 100;
+        let attempts = 0;
+        
+        while (!window.api.configLoaded && attempts < maxAttempts) {
+            console.log(`Ожидание конфигурации API, попытка ${attempts + 1}...`);
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        if (!window.api.configLoaded) {
+            console.error('❌ Таймаут загрузки API конфигурации');
+            throw new Error('API configuration timeout');
+        }
+        
+        console.log('✅ API конфигурация загружена');
     }
 
     /**
@@ -253,7 +345,7 @@ class TicketApp {
                 params.status = this.currentFilter;
             }
 
-            const response = await api.getTickets(params);
+            const response = await window.api.getTickets(params);
             
             const newTickets = response.items || [];
             this.tickets = [...this.tickets, ...newTickets];
@@ -264,7 +356,7 @@ class TicketApp {
 
         } catch (error) {
             console.error('Ошибка загрузки дополнительных тикетов:', error);
-            api.showNotification('Не удалось загрузить дополнительные тикеты', 'error');
+            window.api.showNotification('Не удалось загрузить дополнительные тикеты', 'error');
         } finally {
             this.isLoading = false;
             this.elements.loadMoreBtn.textContent = 'Загрузить еще';
@@ -286,70 +378,121 @@ class TicketApp {
         await this.loadTickets();
         
         // Haptic feedback
-        api.hapticFeedback('light');
+        window.api.hapticFeedback('light');
     }
 
     /**
      * Отрисовка тикетов
      */
     renderTickets() {
-        this.hideAllStates();
+        try {
+            console.log('Отрисовка тикетов, количество:', this.tickets.length);
+            
+            this.hideAllStates();
 
-        if (this.tickets.length === 0) {
-            this.showEmptyState();
-            return;
+            if (this.tickets.length === 0) {
+                console.log('Нет тикетов, показываем empty state');
+                this.showEmptyState();
+                return;
+            }
+
+            console.log('Показываем список тикетов');
+            this.showTicketsList();
+            
+            if (!this.elements.ticketsContainer) {
+                console.error('Не найден элемент ticketsContainer');
+                return;
+            }
+            
+            this.elements.ticketsContainer.innerHTML = '';
+
+            this.tickets.forEach((ticket, index) => {
+                try {
+                    console.log(`Отрисовка тикета ${index + 1}:`, ticket);
+                    const ticketElement = this.createTicketElement(ticket);
+                    this.elements.ticketsContainer.appendChild(ticketElement);
+                } catch (error) {
+                    console.error(`Ошибка отрисовки тикета ${ticket.id}:`, error);
+                }
+            });
+
+            // Показываем/скрываем кнопку "Загрузить еще"
+            if (this.elements.loadMoreBtn) {
+                this.elements.loadMoreBtn.style.display = this.hasMoreTickets ? 'block' : 'none';
+            }
+            
+            console.log('Отрисовка завершена');
+        } catch (error) {
+            console.error('Ошибка в renderTickets:', error);
         }
-
-        this.showTicketsList();
-        this.elements.ticketsContainer.innerHTML = '';
-
-        this.tickets.forEach(ticket => {
-            const ticketElement = this.createTicketElement(ticket);
-            this.elements.ticketsContainer.appendChild(ticketElement);
-        });
-
-        // Показываем/скрываем кнопку "Загрузить еще"
-        this.elements.loadMoreBtn.style.display = this.hasMoreTickets ? 'block' : 'none';
     }
 
     /**
      * Создание элемента тикета
      */
     createTicketElement(ticket) {
-        const template = this.elements.ticketTemplate.content.cloneNode(true);
-        const ticketElement = template.querySelector('.ticket');
+        try {
+            console.log('Создание элемента тикета:', ticket);
+            
+            if (!this.elements.ticketTemplate) {
+                throw new Error('Не найден шаблон ticketTemplate');
+            }
+            
+            const template = this.elements.ticketTemplate.content.cloneNode(true);
+            const ticketElement = template.querySelector('.ticket');
+            
+            if (!ticketElement) {
+                throw new Error('Не найден .ticket в шаблоне');
+            }
 
-        // Устанавливаем ID тикета
-        ticketElement.dataset.ticketId = ticket.id;
+            // Устанавливаем ID тикета
+            ticketElement.dataset.ticketId = ticket.id;
 
-        // Статус
-        const statusElement = template.querySelector('.ticket__status');
-        statusElement.dataset.status = ticket.status;
-        statusElement.querySelector('.ticket__status-text').textContent = this.getStatusText(ticket.status);
+            // Статус
+            const statusElement = template.querySelector('.ticket__status');
+            const statusText = template.querySelector('.ticket__status-text');
+            if (statusElement && statusText) {
+                statusElement.dataset.status = ticket.status;
+                statusText.textContent = this.getStatusText(ticket.status);
+            }
 
-        // Приоритет
-        const priorityElement = template.querySelector('.ticket__priority');
-        priorityElement.dataset.priority = ticket.priority;
-        priorityElement.querySelector('.ticket__priority-text').textContent = this.getPriorityText(ticket.priority);
+            // Приоритет
+            const priorityElement = template.querySelector('.ticket__priority');
+            const priorityText = template.querySelector('.ticket__priority-text');
+            if (priorityElement && priorityText) {
+                priorityElement.dataset.priority = ticket.priority;
+                priorityText.textContent = this.getPriorityText(ticket.priority);
+            }
 
-        // Заголовок и описание
-        template.querySelector('.ticket__title').textContent = ticket.title;
-        template.querySelector('.ticket__description').textContent = ticket.description;
+            // Заголовок и описание
+            const titleElement = template.querySelector('.ticket__title');
+            const descriptionElement = template.querySelector('.ticket__description');
+            if (titleElement) titleElement.textContent = ticket.title;
+            if (descriptionElement) descriptionElement.textContent = ticket.description;
 
-        // Категория
-        if (ticket.category) {
-            template.querySelector('.ticket__category-icon').textContent = ticket.category.icon || '📋';
-            template.querySelector('.ticket__category-name').textContent = ticket.category.name;
+            // Категория
+            if (ticket.category) {
+                const categoryIcon = template.querySelector('.ticket__category-icon');
+                const categoryName = template.querySelector('.ticket__category-name');
+                if (categoryIcon) categoryIcon.textContent = ticket.category.icon || '📋';
+                if (categoryName) categoryName.textContent = ticket.category.name;
+            }
+
+            // Дата создания
+            const dateElement = template.querySelector('.ticket__date');
+            if (dateElement) dateElement.textContent = this.formatDate(ticket.created_at);
+
+            // Количество сообщений
+            const messagesCount = ticket.messages_count || 0;
+            const messagesText = template.querySelector('.ticket__messages-text');
+            if (messagesText) messagesText.textContent = `${messagesCount}`;
+
+            console.log('Элемент тикета создан успешно');
+            return template;
+        } catch (error) {
+            console.error('Ошибка создания элемента тикета:', error);
+            throw error;
         }
-
-        // Дата создания
-        template.querySelector('.ticket__date').textContent = this.formatDate(ticket.created_at);
-
-        // Количество сообщений
-        const messagesCount = ticket.messages_count || 0;
-        template.querySelector('.ticket__messages-text').textContent = `${messagesCount}`;
-
-        return template;
     }
 
     /**
@@ -409,11 +552,11 @@ class TicketApp {
         console.log('Открываем тикет:', ticketId);
         
         // Haptic feedback
-        api.hapticFeedback('medium');
+        window.api.hapticFeedback('medium');
         
         // В полной версии здесь будет переход на страницу тикета
         // Пока что показываем уведомление
-        api.showNotification(`Открытие тикета #${ticketId.slice(0, 8)}...`);
+        window.api.showNotification(`Открытие тикета #${ticketId.slice(0, 8)}...`);
         
         // TODO: Реализовать переход на страницу деталей тикета
         // window.location.href = `ticket.html?id=${ticketId}`;
@@ -426,10 +569,10 @@ class TicketApp {
         console.log('Создание нового тикета');
         
         // Haptic feedback
-        api.hapticFeedback('medium');
+        window.api.hapticFeedback('medium');
         
         // В полной версии здесь будет переход на страницу создания
-        api.showNotification('Функция создания тикета скоро будет доступна!');
+        window.api.showNotification('Функция создания тикета скоро будет доступна!');
         
         // TODO: Реализовать переход на страницу создания тикета
         // window.location.href = 'create-ticket.html';
@@ -552,7 +695,42 @@ class TicketApp {
 }
 
 // Инициализация приложения после загрузки DOM
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM загружен, инициализируем приложение...');
+    
+    // Ожидаем полной инициализации API с увеличенным таймаутом
+    let attempts = 0;
+    const maxAttempts = 100; // 10 секунд максимум
+    
+    while ((!window.api || !window.api.configLoaded) && attempts < maxAttempts) {
+        console.log(`Ожидание инициализации API, попытка ${attempts + 1}...`);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+        
+        // Если API существует, но конфигурация не загружена, попробуем дождаться
+        if (window.api && typeof window.api.waitForConfig === 'function' && !window.api.configLoaded) {
+            try {
+                console.log('Вызываем waitForConfig...');
+                await window.api.waitForConfig();
+                break;
+            } catch (error) {
+                console.error('Ошибка в waitForConfig:', error);
+                // Продолжаем цикл ожидания
+            }
+        }
+    }
+    
+    if (!window.api) {
+        console.error('❌ API не инициализирован после ожидания');
+        return;
+    }
+    
+    if (!window.api.configLoaded) {
+        console.warn('⚠️ API конфигурация не загружена, но продолжаем...');
+    }
+    
+    console.log('✅ API готов, создаем TicketApp...');
+    console.log('API baseURL:', window.api.baseURL);
     window.ticketApp = new TicketApp();
 });
 

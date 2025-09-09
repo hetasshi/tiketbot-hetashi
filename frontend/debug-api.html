@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug API</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div id="status">Загрузка...</div>
+    <div id="logs"></div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const logsDiv = document.getElementById('logs');
+        
+        function addLog(message) {
+            const p = document.createElement('div');
+            p.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            logsDiv.appendChild(p);
+            console.log(message);
+        }
+        
+        async function testAPI() {
+            try {
+                addLog('Начинаем тест API...');
+                
+                // Тест конфигурации
+                addLog('Тестируем загрузку конфигурации...');
+                const configResponse = await fetch('/api/config', {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                const config = await configResponse.json();
+                addLog(`Конфигурация загружена: ${JSON.stringify(config)}`);
+                
+                // Тест API тикетов
+                addLog('Тестируем API тикетов...');
+                const ticketsResponse = await fetch(config.api_base + '/v1/tickets', {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                const tickets = await ticketsResponse.json();
+                addLog(`Тикеты загружены: ${tickets.items?.length || 0} штук`);
+                
+                // Тест WebSocket
+                addLog('Тестируем WebSocket...');
+                const ws = new WebSocket(config.websocket_url + '/ws');
+                
+                ws.onopen = () => {
+                    addLog('WebSocket подключен!');
+                    statusDiv.textContent = 'Все работает!';
+                    statusDiv.style.color = 'green';
+                };
+                
+                ws.onerror = (error) => {
+                    addLog(`Ошибка WebSocket: ${error}`);
+                    statusDiv.textContent = 'Ошибка WebSocket';
+                    statusDiv.style.color = 'red';
+                };
+                
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    addLog(`WebSocket сообщение: ${data.type}`);
+                };
+                
+            } catch (error) {
+                addLog(`Ошибка: ${error.message}`);
+                statusDiv.textContent = 'Ошибка!';
+                statusDiv.style.color = 'red';
+            }
+        }
+        
+        // Запускаем тест после загрузки
+        window.addEventListener('load', () => {
+            setTimeout(testAPI, 1000);
+        });
+    </script>
+</body>
+</html>

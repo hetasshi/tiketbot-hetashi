@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug API - TiketHet</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Debug API - TiketHet</h1>
+    
+    <div>
+        <button onclick="testConfig()">Тест /api/config</button>
+        <button onclick="testTickets()">Тест /api/v1/tickets</button>
+        <button onclick="clearLogs()">Очистить логи</button>
+    </div>
+    
+    <div id="logs"></div>
+
+    <script>
+        function log(message, type = 'log') {
+            const logsDiv = document.getElementById('logs');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log ${type}`;
+            logDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            logsDiv.appendChild(logDiv);
+            console.log(message);
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        async function testConfig() {
+            try {
+                log('Запрос к /api/config...');
+                const response = await fetch('/api/config', {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                
+                log(`Статус: ${response.status}`, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Конфигурация: ${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    log(`Ошибка: ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                log(`Ошибка запроса: ${error.message}`, 'error');
+            }
+        }
+
+        async function testTickets() {
+            try {
+                log('Загрузка конфигурации...');
+                const configResponse = await fetch('/api/config', {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                
+                if (!configResponse.ok) {
+                    throw new Error('Не удалось загрузить конфигурацию');
+                }
+                
+                const config = await configResponse.json();
+                log(`Конфигурация загружена: ${config.api_base}`, 'success');
+                
+                const ticketsUrl = `${config.api_base}/v1/tickets`;
+                log(`Запрос к: ${ticketsUrl}`);
+                
+                const ticketsResponse = await fetch(ticketsUrl, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                
+                log(`Статус: ${ticketsResponse.status}`, ticketsResponse.ok ? 'success' : 'error');
+                
+                if (ticketsResponse.ok) {
+                    const tickets = await ticketsResponse.json();
+                    log(`Получено тикетов: ${tickets.items ? tickets.items.length : 0}`, 'success');
+                    log(`Данные: ${JSON.stringify(tickets, null, 2)}`, 'success');
+                } else {
+                    const errorText = await ticketsResponse.text();
+                    log(`Ошибка: ${ticketsResponse.statusText} - ${errorText}`, 'error');
+                }
+            } catch (error) {
+                log(`Ошибка запроса: ${error.message}`, 'error');
+            }
+        }
+
+        // Автотест при загрузке
+        window.addEventListener('load', () => {
+            log('Страница загружена');
+            setTimeout(() => {
+                testConfig();
+                setTimeout(() => {
+                    testTickets();
+                }, 1000);
+            }, 500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="format-detection" content="telephone=no">
+    <title>TiketHet - Test</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: system-ui; padding: 20px; margin: 0; }
+        #status { font-size: 18px; margin-bottom: 20px; }
+        #logs { font-size: 12px; background: #f5f5f5; padding: 10px; border-radius: 8px; max-height: 400px; overflow-y: auto; }
+        .log { margin: 2px 0; padding: 2px 4px; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>TiketHet Debug</h1>
+    <div id="status">⏳ Инициализация...</div>
+    
+    <button onclick="testAPI()">Тест API</button>
+    <button onclick="testWebSocket()">Тест WebSocket</button>
+    <button onclick="clearLogs()">Очистить логи</button>
+    
+    <div id="logs"></div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const logsDiv = document.getElementById('logs');
+        
+        function addLog(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            logsDiv.appendChild(div);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLogs() {
+            logsDiv.innerHTML = '';
+        }
+        
+        async function testAPI() {
+            addLog('🔧 Начинаем тест API...');
+            
+            try {
+                // Конфигурация
+                const configResponse = await fetch('/api/config', {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                const config = await configResponse.json();
+                addLog(`✅ Конфигурация загружена: ${config.api_base}`, 'success');
+                
+                // Тикеты
+                const ticketsResponse = await fetch(config.api_base + '/v1/tickets', {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                const tickets = await ticketsResponse.json();
+                addLog(`✅ Тикеты загружены: ${tickets.items?.length || 0} шт.`, 'success');
+                
+                statusDiv.textContent = '✅ API работает';
+                statusDiv.style.color = 'green';
+                
+            } catch (error) {
+                addLog(`❌ Ошибка API: ${error.message}`, 'error');
+                statusDiv.textContent = '❌ Ошибка API';
+                statusDiv.style.color = 'red';
+            }
+        }
+        
+        async function testWebSocket() {
+            addLog('🔌 Начинаем тест WebSocket...');
+            
+            try {
+                const configResponse = await fetch('/api/config', {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                const config = await configResponse.json();
+                
+                const ws = new WebSocket(config.websocket_url + '/ws');
+                
+                ws.onopen = () => {
+                    addLog('✅ WebSocket подключен', 'success');
+                };
+                
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    addLog(`📨 WebSocket: ${data.type}`, 'success');
+                };
+                
+                ws.onerror = (error) => {
+                    addLog(`❌ Ошибка WebSocket: ${error}`, 'error');
+                };
+                
+                setTimeout(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({type: 'ping', timestamp: new Date().toISOString()}));
+                        addLog('📤 Отправлен ping', 'success');
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                addLog(`❌ Ошибка WebSocket: ${error.message}`, 'error');
+            }
+        }
+        
+        // Автотест при загрузке
+        window.addEventListener('load', () => {
+            addLog('🚀 Страница загружена');
+            addLog(`📱 Telegram WebApp: ${window.Telegram?.WebApp ? 'Доступен' : 'Недоступен'}`);
+            addLog(`🌐 URL: ${window.location.href}`);
+            
+            setTimeout(() => {
+                testAPI();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
